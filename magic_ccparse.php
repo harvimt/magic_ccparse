@@ -29,12 +29,15 @@ function ccparse($str=''){
 		if(empty($colorless2)){
 			$colorless2 = '';
 		}
-		$match = $colorless2 . preg_replace('/\d+/', '', $match);
+		$match = preg_replace('/\d+/', '', $match);
 
 		//reorder doubles
 		$arr = str_split($match);
 		usort($arr,'magic_cc_cmp');
 		$match = implode($arr);
+
+
+		$match = $colorless2 . $match;
 
 		if(isset($colors[strlen($match)][$match])){
 			$colors[strlen($match)][$match]++;
@@ -100,7 +103,6 @@ function ccparse($str=''){
 		if(is_array($colors[$i])) {
 			uksort($colors[$i], 'magic_cc_sort_cmp');
 			foreach($colors[$i] as $color => $qty){
-				//$out .= '{' . $qty . $color . '}';
 				$out .= str_repeat('{' . $color . '}', $qty);
 			}
 		}
@@ -118,7 +120,6 @@ function ccparse($str=''){
 	uksort($colors[0], 'magic_cc_sort_cmp');
 	foreach($colors[0] as $color => $qty){
 		if(strlen($color) > 1){
-			//$out .= '{' . $qty . $color . '}';
 			$out .= str_repeat('{' . $color . '}', $qty);
 		}else{
 			$out .= str_repeat($color, $qty);
@@ -175,3 +176,4 @@ function magic_cc_cmp($a,$b){
 ccparse("{RG}RG");
 ccparse('{2G}{BG}{RG}');
 ccparse('W{BU}');
+ccparse('{2BU}{2BU}{2BU}');
