@@ -1,5 +1,4 @@
 <?php
-#ini_set('display_errors', 'off');
 
 #color wheel node
 class cwn {
@@ -10,7 +9,9 @@ class cwn {
 
 #Magic Colorcode parser
 function ccparse($str='', $html=false){
-	/* if $html set to true, output <img> tags to the gatherer
+	/* normalize $str or turn into html
+	 * if $html set to true, output <img> tags to the gatherer
+	 * returns normalized mana cost string or HTML (if $html is true)
 	 */
 	$str = strtoupper($str);
 	assert(preg_match('/[0-9 WUBRGTX{}]*/', $str)); //must contain only digit, space, color code or {}, X or T(tap)
@@ -18,7 +19,6 @@ function ccparse($str='', $html=false){
 	$colorless = 0;
 	$colors = array();
 	$colors[0] = array();
-	//var_dump($matches);
 
 	#pass 1 get curly brace code
 	preg_match_all('/\{([^}]+)}/', $str, $matches);
@@ -172,10 +172,6 @@ function clrtoimg($clr){
 	return "<img alt=\"$clr\" src=\"http://gatherer.wizards.com/handlers/image.ashx?size=medium&name=$clr&type=symbol\"/>";
 }
 
-//sorts an array (string() => int()) where they key is a colorcode and int is a quantity
-
-//compares two colorcodes (should be same length in order to get proper results)
-//should be sorted before input
 function magic_cc_sort_cmp($a, $b){
 	$a = strtr($a,'WUBRG','abcde');
 	$b = strtr($b, 'WUBRG','abcde');
