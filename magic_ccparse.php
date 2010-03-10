@@ -14,6 +14,7 @@ function ccparse($str=''){
 
 	$colorless = 0;
 	$colors = array();
+	$colors[0] = array();
 	//var_dump($matches);
 
 	#pass 1 get curly brace code
@@ -93,7 +94,8 @@ function ccparse($str=''){
 
 	//render colorless and X
 	$out = str_repeat('X', $Xs);
-	if(!empty($colorless) || empty($colors)){
+	//var_dump( empty($colors[0]) );
+	if(!empty($colorless) || empty($colors[0])){
 		$out .= $colorless;
 	}
 
@@ -172,8 +174,8 @@ function magic_cc_cmp($a,$b){
 //ccparse("{WUBRG}{GRBUW}");
 
 //ccparse("XR");
-//ccparse("");
-ccparse("{RG}RG");
-ccparse('{2G}{BG}{RG}');
-ccparse('W{BU}');
-ccparse('{2BU}{2BU}{2BU}');
+ccparse("");
+//ccparse("{RG}RG");
+//ccparse('{2G}{BG}{RG}');
+//ccparse('W{BU}');
+//ccparse('{2BU}{2BU}{2BU}');
