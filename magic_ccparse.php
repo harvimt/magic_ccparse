@@ -1,4 +1,5 @@
 <?php
+#ini_set('display_errors', 'off');
 
 #color wheel node
 class cwn {
@@ -6,6 +7,7 @@ class cwn {
 	public $data;
 	public function __construct($data){$this->data = $data;}
 }
+
 #Magic Colorcode parser
 function ccparse($str=''){
 	$str = strtoupper($str);
@@ -19,22 +21,32 @@ function ccparse($str=''){
 	//var_dump($matches);
 	foreach ($matches[1] as $match){
 		preg_match_all('/\d+/', $match, $matches2);
-		$q = 0; //quantity
+		$colorless2 = 0; 
 		foreach ($matches2[0] as $match2){
-			$q += $match2;
+			$colorless2 += $match2;
 		}
 
-		if ($q == 0) { $q = 1; }
-		$match = preg_replace('/\d+/', '', $match);
+		if(empty($colorless2)){
+			$colorless2 = '';
+		}
+		$match = $colorless2 . preg_replace('/\d+/', '', $match);
 
 		//reorder doubles
 		$arr = str_split($match);
 		usort($arr,'magic_cc_cmp');
 		$match = implode($arr);
 
-		$colors[strlen($match)][$match] += $q;
-		$colors[0][$match] += $q;
+		if(isset($colors[strlen($match)][$match])){
+			$colors[strlen($match)][$match]++;
+		}else{
+			$colors[strlen($match)][$match] = 1;
+		}
 
+		if(isset($colors[0][$match])){
+			$colors[0][$match]++;
+		}else{
+			$colors[0][$match] = 1;
+		}
 	}
 	$str = preg_replace('/{[^}]+\}/', '', $str); //remove curly brace codes
 
@@ -50,18 +62,31 @@ function ccparse($str=''){
 
 	$len = strlen($str);
 	for($i = 0; $i < $len; $i++){
-		$colors[1][$str[$i]]++;// += 1;
-		$colors[0][$str[$i]]++;// += 1;
+		if(isset($colors[1][$str[$i]])){
+			$colors[1][$str[$i]]++;
+		}else{
+			$colors[1][$str[$i]] = 1;
+		}
+		if(isset($colors[0][$str[$i]])){
+			$colors[0][$str[$i]]++;
+		}else{
+			$colors[0][$str[$i]] = 1;
+		}
 	}
 
 	/*X will be parsed as $colors[0]['X'], should probably check to see if
 		that's present*/
-	$Xs = $colors[1]['X'];
-	unset($colors[1]['X']);
+	$Xs = 0;
+	if (isset($colors[1]['X'])){
+		$Xs = $colors[1]['X'];
+		unset($colors[1]['X']);
+	}
 
-	$colorless += $colors[5]['WUBRG']; //All color mana is the same thing as
-	//colorless mana. or is it?
-	unset($colors[5]['WUBRG']);
+	if(isset($colors[5]['WUBRG'])){
+		$colorless += $colors[5]['WUBRG']; //All color mana is the same thing as
+		//colorless mana. or is it?
+		unset($colors[5]['WUBRG']);
+	}
 
 	//render colorless and X
 	$out = str_repeat('X', $Xs);
@@ -108,8 +133,8 @@ function ccparse($str=''){
 //compares two colorcodes (should be same length in order to get proper results)
 //should be sorted before input
 function magic_cc_sort_cmp($a, $b){
-	$a = strtr($a,'WUBRG','12345');
-	$b = strtr($b, 'WUBRG','12345');
+	$a = strtr($a,'WUBRG','abcde');
+	$b = strtr($b, 'WUBRG','abcde');
 	return strcmp($a,$b);
 }
 
@@ -148,3 +173,5 @@ function magic_cc_cmp($a,$b){
 //ccparse("XR");
 //ccparse("");
 ccparse("{RG}RG");
+ccparse('{2G}{BG}{RG}');
+ccparse('W{BU}');
