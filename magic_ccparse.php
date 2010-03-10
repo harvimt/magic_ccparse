@@ -14,7 +14,17 @@ function ccparse($str='', $html=false){
 	 * returns normalized mana cost string or HTML (if $html is true)
 	 */
 	$str = strtoupper($str);
-	assert(preg_match('/[0-9 WUBRGTX{}]*/', $str)); //must contain only digit, space, color code or {}, X or T(tap)
+
+	//accept the gatherer style strings (2/B) instead of {2B}
+	//also turn brackets([]) into curlies just 'coz
+	$str = str_replace('/','',$str); //remove '/'
+	$str = strtr($str, '()[]','{}{}'); //normalize parentheticals
+
+	assert(preg_match('/^([0-9WUBRGTX]+|\{[0-9WUBRG]+})*$/','{BG}'));
+	//must contain only digit, space, color code or {}, X or T(tap)
+	//X and/or Tap must not be w/i {}
+	//There must be only one nested level of {}
+	//
 
 	$colorless = 0;
 	$colors = array();
@@ -39,7 +49,6 @@ function ccparse($str='', $html=false){
 		$arr = str_split($match);
 		usort($arr,'magic_cc_cmp');
 		$match = implode($arr);
-
 
 		$match = $colorless2 . $match;
 
