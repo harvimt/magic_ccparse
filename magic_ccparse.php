@@ -9,8 +9,11 @@ class cwn {
 }
 
 #Magic Colorcode parser
-function ccparse($str=''){
+function ccparse($str='', $html=false){
+	/* if $html set to true, output <img> tags to the gatherer
+	 */
 	$str = strtoupper($str);
+	assert(preg_match('/[0-9 WUBRGTX{}]*/', $str)); //must contain only digit, space, color code or {}, X or T(tap)
 
 	$colorless = 0;
 	$colors = array();
@@ -85,6 +88,11 @@ function ccparse($str=''){
 		$Xs = $colors[1]['X'];
 		unset($colors[1]['X']);
 	}
+	$Ts = 0;
+	if (isset($colors[1]['T'])){
+		$Ts = $colors[1]['T'];
+		unset($colors[1]['T']);
+	}
 
 	if(isset($colors[5]['WUBRG'])){
 		$colorless += $colors[5]['WUBRG']; //All color mana is the same thing as
@@ -93,42 +101,75 @@ function ccparse($str=''){
 	}
 
 	//render colorless and X
-	$out = str_repeat('X', $Xs);
+	if($html){
+		$out = str_repeat(clrtoimg('T'), $Ts);
+		$out .= str_repeat(clrtoimg('X'), $Xs);
+	}else{
+		$out = str_repeat('T', $Ts);
+		$out .= str_repeat('X', $Xs);
+	}
 	//var_dump( empty($colors[0]) );
 	if(!empty($colorless) || empty($colors[0])){
-		$out .= $colorless;
+		if($html){
+			$out .= clrtoimg($colorless);
+		}else{
+			$out .= $colorless;
+		}
 	}
 
-	/*
-	//Render multi-colors
-	for($i = 4; $i > 1; $i--){
-		if(is_array($colors[$i])) {
-			uksort($colors[$i], 'magic_cc_sort_cmp');
-			foreach($colors[$i] as $color => $qty){
-				$out .= str_repeat('{' . $color . '}', $qty);
+	//Render multi-colors first
+	if(false){
+		//Render multi-colors
+		for($i = 4; $i > 1; $i--){
+			if(isset($colors[$i]) && is_array($colors[$i])) {
+				uksort($colors[$i], 'magic_cc_sort_cmp');
+				
+				foreach($colors[$i] as $color => $qty){
+					if($html){
+						$out .= str_repeat(clrtoimg($color), $qty);
+					}else{
+						$out .= str_repeat('{' . $color . '}', $qty);
+					}
+				}
+			}
+		}
+		//Render single colors
+		if (isset($colors[1]) && is_array($colors[1])){
+			uksort($colors[$i],'magic_cc_sort_cmp');
+			foreach ($colors[1] as $color => $qty){
+				if($html){
+					$out .= str_repeat(clrtoimg($color), $qty);
+				}else{
+					$out .= str_repeat($color, $qty);
+				}
+			}
+		}
+	}else{
+		//Render all colors at once (sort "in-between" instead of "multis-first")
+		uksort($colors[0], 'magic_cc_sort_cmp');
+		foreach($colors[0] as $color => $qty){
+			if(strlen($color) > 1){
+				if ($html){
+					$out .= str_repeat(clrtoimg($color), $qty);
+				}else{
+					$out .= str_repeat('{' . $color . '}', $qty);
+				}
+			}else{
+				if ($html){
+					$out .= str_repeat(clrtoimg($color), $qty);
+				}else{
+					$out .= str_repeat($color, $qty);
+				}
 			}
 		}
 	}
-	//Render single colors
-	if (is_array($colors[1])){
-		uksort($colors[$i],'magic_cc_sort_cmp');
-		foreach ($colors[1] as $color => $qty){
-			$out .= str_repeat($color, $qty);
-		}
-	}
-	 */
 
-	//Render all colors at once (sort "in-between" instead of "multis-first")
-	uksort($colors[0], 'magic_cc_sort_cmp');
-	foreach($colors[0] as $color => $qty){
-		if(strlen($color) > 1){
-			$out .= str_repeat('{' . $color . '}', $qty);
-		}else{
-			$out .= str_repeat($color, $qty);
-		}
-	}
+	return $out;
+}
 
-	echo $out . "\n";
+function clrtoimg($clr){
+	$clr = strtr($clr, array('T' => 'tap', 'X' => 'x'));
+	return "<img alt=\"$clr\" src=\"http://gatherer.wizards.com/handlers/image.ashx?size=medium&name=$clr&type=symbol\"/>";
 }
 
 //sorts an array (string() => int()) where they key is a colorcode and int is a quantity
@@ -166,16 +207,21 @@ function magic_cc_cmp($a,$b){
 	return 1; //else greater than
 }
 
-//ccparse('3W');
-//ccparse('34W');
-//ccparse('3 4W');
-//ccparse('5WGB {GB} {BG} {3B} {RGU}');
-//ccparse("{GB}{BG}{WU}{UW}{UB}{BU}{BR}{RB}{GW}{WG}{WB}{UR}{RU}{RW}{WR}{GU}{UG}");
-//ccparse("{WUBRG}{GRBUW}");
+function test_magic(){
+	assert(ccparse('3W') == '3W');
+	assert(ccparse('34W') == '34W');
+	assert(ccparse('3 4W') == '7W');
+	//assert(ccparse('5WGB {GB} {BG} {3B} {RGU}') == '5{3B}WB{BG}{BG}{RGU}{G}'); //if you use the other sorting method this will fail
+	//echo ccparse('5WGB {GB} {BG} {3B} {RGU}');
+	ccparse("{GB}{BG}{WU}{UW}{UB}{BU}{BR}{RB}{GW}{WG}{WB}{UR}{RU}{RW}{WR}{GU}{UG}");
+	ccparse("{WUBRG}{GRBUW}");
 
-//ccparse("XR");
-ccparse("");
-//ccparse("{RG}RG");
-//ccparse('{2G}{BG}{RG}');
-//ccparse('W{BU}');
-//ccparse('{2BU}{2BU}{2BU}');
+	ccparse("XR");
+	ccparse("");
+	ccparse("{RG}RG");
+	ccparse('{2G}{BG}{RG}');
+	ccparse('W{BU}');
+	ccparse('{2BU}{2BU}{2BU}');
+	echo ccparse('T5WGB {GB} {BG} {2B} {WBR}', true);
+}
+test_magic();
