@@ -27,10 +27,12 @@ class cwn {
 }
 
 #Magic Colorcode parser
-function ccparse($str='', $html=false){
+function ccparse($str='', $html=false, $ability=false){
 	/* normalize $str or turn into html
 	 * if $html set to true, output <img> tags to the gatherer
 	 * returns normalized mana cost string or HTML (if $html is true)
+	 * if $ability is set to true, process T for tap, Q for untap, and F for 
+	 * flip as well as manacodes
 	 */
 	$str = strtoupper($str);
 
@@ -39,10 +41,14 @@ function ccparse($str='', $html=false){
 	$str = str_replace('/','',$str); //remove '/'
 	$str = strtr($str, '()[]','{}{}'); //normalize parentheticals
 
-	assert(preg_match('/^([0-9WUBRGTX]+|\{[0-9WUBRG]+})*$/','{BG}'));
+	assert(preg_match('/^([0-9SWUBRGTQFX]+|\{[0-9WUBRGS]+})*$/',$str));
 	//must contain only digit, space, color code or {}, X or T(tap)
-	//X and/or Tap must not be w/i {}
+	//X and/or Tap(T), flip(F), and untap(Q) must not be w/i {}
 	//There must be only one nested level of {}
+	//
+	if (! $ablity){
+		$str = strtr($str, 'TQF', '');
+	}
 
 	$colorless = 0;
 	$colors = array();
@@ -195,13 +201,21 @@ function ccparse($str='', $html=false){
 }
 
 function clrtoimg($clr){
-	$clr = strtr($clr, array('T' => 'tap', 'X' => 'x'));
+	$clr = strtr($clr,
+		array(
+			'T' => 'tap',
+			'Q' => 'untap',
+			'F' => 'flip', //The gatherer doens't have a symbol, but this way the alt-text will be correct
+			'X' => 'x',
+			'S' => 'snow',
+		)
+	);
 	return "<img alt=\"$clr\" src=\"http://gatherer.wizards.com/handlers/image.ashx?size=medium&name=$clr&type=symbol\"/>";
 }
 
 function magic_cc_sort_cmp($a, $b){
-	$a = strtr($a,'WUBRG','abcde');
-	$b = strtr($b, 'WUBRG','abcde');
+	$a = strtr($a,'SWUBRG','abcdef');
+	$b = strtr($b, 'SWUBRG','abcdef');
 	return strcmp($a,$b);
 }
 
@@ -220,6 +234,8 @@ function magic_cc_cmp($a,$b){
 
 	if($a == $b) return 0;
 
+	if($a == 'S') return -1; //snow always sorts to the front.
+
 	$current = $$a;
 	for($i = 0; $i < 3; $i++){ //if less than 3 hops away, less than
 		if($current->data  == $b){
@@ -231,6 +247,7 @@ function magic_cc_cmp($a,$b){
 }
 
 function test_magic(){
+	//unit tester, sort of
 	assert(ccparse('3W') == '3W');
 	assert(ccparse('34W') == '34W');
 	assert(ccparse('3 4W') == '7W');
