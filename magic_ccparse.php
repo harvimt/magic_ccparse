@@ -121,11 +121,6 @@ function ccparse($str='', $html=false, $ability=false){
 		$Xs = $colors[1]['X'];
 		unset($colors[1]['X']);
 	}
-	$Ts = 0;
-	if (isset($colors[1]['T'])){
-		$Ts = $colors[1]['T'];
-		unset($colors[1]['T']);
-	}
 
 	if(isset($colors[5]['WUBRG'])){
 		$colorless += $colors[5]['WUBRG']; //All color mana is the same thing as
@@ -133,12 +128,11 @@ function ccparse($str='', $html=false, $ability=false){
 		unset($colors[5]['WUBRG']);
 	}
 
+	$out = '';
 	//render colorless and X
 	if($html){
-		$out = str_repeat(clrtoimg('T'), $Ts);
 		$out .= str_repeat(clrtoimg('X'), $Xs);
 	}else{
-		$out = str_repeat('T', $Ts);
 		$out .= str_repeat('X', $Xs);
 	}
 	//var_dump( empty($colors[0]) );
@@ -151,7 +145,7 @@ function ccparse($str='', $html=false, $ability=false){
 	}
 
 	//Render multi-colors first
-	if(false){
+	if (false){
 		//Render multi-colors
 		for($i = 4; $i > 1; $i--){
 			if(isset($colors[$i]) && is_array($colors[$i])) {
@@ -177,22 +171,36 @@ function ccparse($str='', $html=false, $ability=false){
 				}
 			}
 		}
-	}else{
+	} else {
 		//Render all colors at once (sort "in-between" instead of "multis-first")
 		uksort($colors[0], 'magic_cc_sort_cmp');
-		foreach($colors[0] as $color => $qty){
-			if(strlen($color) > 1){
+		foreach ($colors[0] as $color => $qty){
+			if (strlen($color) > 1){
 				if ($html){
 					$out .= str_repeat(clrtoimg($color), $qty);
-				}else{
+				} else {
 					$out .= str_repeat('{' . $color . '}', $qty);
 				}
-			}else{
+			} else {
 				if ($html){
 					$out .= str_repeat(clrtoimg($color), $qty);
-				}else{
+				} else {
 					$out .= str_repeat($color, $qty);
 				}
+			}
+		}
+	}
+
+	//Handle, T,Q, and F (tap, untap, and flip) rendering
+	foreach ( array('T','Q','F') as $i){
+		if (isset($colors[1][$i])){
+			if ($out != ''){
+				$out .= ', ';
+			}
+			if($html){
+				$out .= clrtoimg($i);
+			}else{
+				$out .= $i;
 			}
 		}
 	}
